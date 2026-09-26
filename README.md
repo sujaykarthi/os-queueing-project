@@ -1,240 +1,394 @@
-# Digital Marketing Request Processing Using Queueing Theory
-
-A queueing-model-based system for analyzing and managing incoming digital marketing requests using **M/M/1 queueing theory** and a **First-Come, First-Served (FCFS)** queue.
-
-The project is currently implemented and verified in **Python**. The long-term goal is to implement the queueing model on a **Zynq FPGA**, integrate it with real application requests, and extend the system from **M/M/1 to M/M/N**.
+# Digital Marketing Request Processing Using Queueing Theory and FPGA
 
 ## Project Overview
 
-Digital marketing platforms can receive a large number of events and requests, such as:
+This project develops a queueing-model-based request processing system for analyzing and managing digital marketing workloads.
 
-* Advertisement clicks
-* Website visits
-* Lead and form submissions
-* Product inquiries
-* Purchase events
-* Campaign interactions
-* Email/SMS notification requests
+Digital marketing platforms receive a continuous flow of requests such as:
 
-When multiple requests arrive and compete for processing resources, they can form a queue.
+- Advertisement clicks
+- Website visits
+- Customer inquiries
+- Product searches
+- Campaign interactions
+- Notification requests
 
-This project models that behavior using queueing theory.
+When many requests arrive simultaneously, they form queues and experience waiting time before processing.
 
-The current system uses:
+This project uses **queueing theory** to model this behavior.
+
+The current implementation uses:
+
+- **M/M/1 Queueing Model**
+- **FCFS (First-Come-First-Served) Queue**
+- **Python-based reference implementation**
+
+The future goal is to implement the system on a **PYNQ-Z2 FPGA**, process real application data, and extend the system from **M/M/1 to M/M/N**.
+
+---
+
+# Project Objectives
+
+The main objectives of this project are:
+
+- Develop a mathematical queueing model for request processing.
+- Implement an M/M/1 queueing model using Python.
+- Implement FCFS scheduling for request ordering.
+- Generate and verify test cases.
+- Develop a hardware-compatible fixed-point model.
+- Implement the queueing model on FPGA.
+- Compare FPGA results with Python reference results.
+- Extend the single-server M/M/1 model to a multi-server M/M/N model.
+
+---
+
+# System Concept
+
+The proposed system represents a digital marketing request processing environment.
 
 ```text
 Digital Marketing Requests
-          ↓
+            |
+            ↓
     Request Collector
-          ↓
-      FCFS Queue
-          ↓
-  Single Processing Server
-          ↓
-    Processed Requests
+            |
+            ↓
+        FCFS Queue
+            |
+            ↓
+       M/M/1 Model
+            |
+            ↓
+    Processing Server
+            |
+            ↓
+        Results
 ```
 
-The **FCFS queue** determines the order in which requests are processed, while the **M/M/1 model** mathematically analyzes the behavior of the single-server queue.
+The FCFS queue determines the order of request processing.
+
+The M/M/1 model mathematically analyzes the behavior of the queue.
 
 ---
 
-## Current Implementation
+# Queueing Model
 
-The current version contains:
+## M/M/1 Model
 
-### 1. M/M/1 Queueing Model
+M/M/1 represents:
 
-The mathematical model uses:
+### First M
+Poisson arrival process.
 
-* `λ` — arrival rate
-* `μ` — service rate
-* `ρ` — utilization
-* `P0` — probability of zero customers
-* `Pn` — probability of `n` customers
-* `L` — average number of customers in the system
-* `Lq` — average number of customers in the queue
-* `W` — average time in the system
-* `Wq` — average waiting time in the queue
+### Second M
+Exponential service time.
+
+### 1
+Single processing server.
+
+The main parameters are:
+
+```text
+λ = Arrival rate
+μ = Service rate
+ρ = Utilization
+n = Number of customers
+```
 
 The system is stable when:
 
-```text
-λ < μ
-```
-
-The implemented equations are:
-
-```text
-ρ  = λ / μ
-
-P0 = 1 - ρ
-
-Pn = (1 - ρ) × ρ^n
-
-L  = λ / (μ - λ)
-
-Lq = λ² / [μ(μ - λ)]
-
-W  = 1 / (μ - λ)
-
-Wq = λ / [μ(μ - λ)]
-```
-
-The implementation also verifies the relationships:
-
-```text
-L  = λW
-
-Lq = λWq
-```
+\[
+\lambda < \mu
+\]
 
 ---
 
-## 2. FCFS Queue
+# M/M/1 Mathematical Equations
 
-The project implements a **First-Come, First-Served (FCFS)** queue using Python's `deque`.
+## Utilization
 
-Requests are processed in the same order in which they enter the queue.
+\[
+\rho=\frac{\lambda}{\mu}
+\]
+
+## Probability of Zero Customers
+
+\[
+P_0=1-\rho
+\]
+
+## Probability of n Customers
+
+\[
+P_n=(1-\rho)\rho^n
+\]
+
+## Average Number of Customers in System
+
+\[
+L=\frac{\lambda}{\mu-\lambda}
+\]
+
+## Average Queue Length
+
+\[
+L_q=\frac{\lambda^2}{\mu(\mu-\lambda)}
+\]
+
+## Average Time in System
+
+\[
+W=\frac{1}{\mu-\lambda}
+\]
+
+## Average Waiting Time
+
+\[
+W_q=\frac{\lambda}{\mu(\mu-\lambda)}
+\]
+
+The model also verifies:
+
+\[
+L=\lambda W
+\]
+
+\[
+L_q=\lambda W_q
+\]
+
+---
+
+# FCFS Queue
+
+FCFS stands for:
+
+**First-Come-First-Served**
+
+It ensures that requests are processed in the same order they arrive.
 
 Example:
 
+Arrival order:
+
 ```text
-R1 → R2 → R3 → R4 → R5
+R1 → R2 → R3 → R4
 ```
 
 Processing order:
 
 ```text
-R1
-R2
-R3
-R4
-R5
+R1 → R2 → R3 → R4
 ```
 
-The queue implementation supports:
-
-* Enqueue
-* Dequeue
-* Peek
-* Empty check
-* Queue size
+The FCFS queue represents how real systems handle incoming requests before assigning processing resources.
 
 ---
 
-## 3. Request Model
+# Current Software Implementation
 
-Each incoming request is represented by a `Request` object.
+The current software implementation is developed using Python.
 
-A request contains:
+The system includes:
 
-```text
-Request ID
-Arrival Time
-Service Time
-Queue Entry Time
-Service Start Time
-Service Completion Time
-Waiting Time
-Status
-```
-
-The request status progresses through the processing lifecycle:
-
-```text
-WAITING → PROCESSING → COMPLETED
-```
+- M/M/1 mathematical calculations
+- Input generation
+- FCFS queue handling
+- Request management
+- Test generation
+- Automated verification
 
 ---
 
-## Project Structure
+# Repository Structure
 
 ```text
 os-queueing-project/
+
 │
 ├── main.py
 ├── inputs.py
 ├── mm1.py
 ├── queue_fcfs.py
 ├── request.py
-├── test_fcfs.py
 ├── generate_tests.py
 ├── verify_tests.py
+├── test_fcfs.py
 ├── mm1_test_vectors.csv
+├── requirements.txt
 ├── .gitignore
 └── README.md
 ```
 
-### File Description
+---
 
-| File                   | Purpose                                                                 |
-| ---------------------- | ----------------------------------------------------------------------- |
-| `main.py`              | Main program that connects the queueing model, requests, and FCFS queue |
-| `inputs.py`            | Generates input parameters for M/M/1 testing                            |
-| `mm1.py`               | Implements the M/M/1 mathematical calculations                          |
-| `queue_fcfs.py`        | Implements the FCFS queue                                               |
-| `request.py`           | Defines the request object and request lifecycle                        |
-| `test_fcfs.py`         | Tests FCFS queue ordering                                               |
-| `generate_tests.py`    | Generates 100 M/M/1 test vectors                                        |
-| `verify_tests.py`      | Verifies calculated results against the reference model                 |
-| `mm1_test_vectors.csv` | Stores generated test cases and expected M/M/1 results                  |
-| `.gitignore`           | Prevents Python cache files from being committed                        |
-| `README.md`            | Project documentation                                                   |
+# File Description
+
+| File | Description |
+|---|---|
+| main.py | Executes the M/M/1 queueing model |
+| inputs.py | Generates λ, μ and n values |
+| mm1.py | Contains M/M/1 mathematical calculations |
+| queue_fcfs.py | Implements FCFS queue operations |
+| request.py | Defines request information |
+| generate_tests.py | Generates M/M/1 test vectors |
+| verify_tests.py | Verifies calculated results |
+| test_fcfs.py | Tests FCFS queue operation |
+| mm1_test_vectors.csv | Stores generated test cases |
+| requirements.txt | Python dependency information |
+| README.md | Project documentation |
 
 ---
 
-## Testing and Verification
+# Installation and Setup
 
-The project currently contains **100 M/M/1 test vectors**.
+## Requirements
 
-```text
-Total Tests    : 100
-Stable Cases   : 80
-Unstable Cases : 20
-```
+- Python 3.x
+- Git
 
-The test cases include both normal stable queues and unstable conditions where:
-
-```text
-λ ≥ μ
-```
-
-The verification program checks:
-
-* Queue stability
-* Utilization `ρ`
-* `P0`
-* `Pn`
-* `L`
-* `Lq`
-* `W`
-* `Wq`
-* `L = λW`
-* `Lq = λWq`
-
-This provides a controlled software reference before moving toward hardware implementation.
+No external Python libraries are required currently.
 
 ---
 
-## Example M/M/1 Output
+## Clone Repository
 
-Example input:
-
-```text
-λ = 3.39
-μ = 17.22
-n = 5
+```bash
+git clone https://github.com/sujaykarthi/os-queueing-project.git
 ```
 
-Example output:
+Enter the project folder:
+
+```bash
+cd os-queueing-project
+```
+
+---
+
+# Running the Project
+
+## Run M/M/1 Model
+
+```bash
+python main.py
+```
+
+This generates:
+
+- Arrival rate (λ)
+- Service rate (μ)
+- Number of customers (n)
+
+and calculates:
+
+- Utilization
+- Probabilities
+- Queue length
+- Waiting time
+
+---
+
+## Generate Test Vectors
+
+```bash
+python generate_tests.py
+```
+
+This creates:
 
 ```text
-========== M/M/1 MODEL ==========
+mm1_test_vectors.csv
+```
+
+---
+
+## Verify Results
+
+```bash
+python verify_tests.py
+```
+
+This compares calculated values with expected results.
+
+---
+
+## Test FCFS Queue
+
+```bash
+python test_fcfs.py
+```
+
+This verifies that requests are processed in the correct order.
+
+---
+
+# Test Vector Generation
+
+The project currently contains:
+
+```text
+Total Test Cases : 100
+
+Stable Cases     : 80
+
+Unstable Cases   : 20
+```
+
+The test vectors include:
+
+- λ
+- μ
+- n
+- Stability condition
+- ρ
+- P0
+- Pn
+- L
+- Lq
+- W
+- Wq
+
+These test cases act as the software reference dataset for future FPGA verification.
+
+---
+
+# Verification
+
+The system verifies:
+
+- Queue stability
+- Utilization (ρ)
+- Probability values
+- Average queue length
+- Waiting time
+
+The following relationships are checked:
+
+```text
+L = λW
+
+Lq = λWq
+```
+
+This ensures mathematical consistency.
+
+---
+
+# Sample Output
+
+Example:
+
+```text
+========== M/M/1 QUEUE ==========
+
 Arrival rate (λ) : 3.39
 Service rate (μ) : 17.22
 Number (n)       : 5
+
 ---------------------------------
+
 Queue status     : STABLE
+
 ρ                : 0.196864
 P0               : 0.803136
 Pn               : 0.000237
@@ -242,189 +396,173 @@ L                : 0.245119
 Lq               : 0.048255
 W                : 0.072307
 Wq               : 0.014235
+
+=================================
 ```
 
 ---
 
-## Example FCFS Output
+# Current Project Status
 
-For five incoming requests:
+## Completed
 
-```text
-R1: Arrival=0, Service=3
-R2: Arrival=1, Service=2
-R3: Arrival=2, Service=4
-R4: Arrival=3, Service=1
-R5: Arrival=4, Service=2
-```
-
-The processing results are:
-
-```text
-R1: Start=0  Completion=3  Waiting=0
-R2: Start=3  Completion=5  Waiting=2
-R3: Start=5  Completion=9  Waiting=3
-R4: Start=9  Completion=10 Waiting=6
-R5: Start=10 Completion=12 Waiting=6
-```
-
-The processing order remains:
-
-```text
-R1 → R2 → R3 → R4 → R5
-```
-
-This demonstrates the FCFS behavior of the implemented queue.
+✅ M/M/1 mathematical model  
+✅ Python implementation  
+✅ FCFS queue implementation  
+✅ Request model  
+✅ 100 test cases  
+✅ Stable and unstable testing  
+✅ Verification system  
+✅ GitHub repository  
 
 ---
 
-## Technologies Used
+## In Progress
 
-* **Python**
-* Queueing Theory
-* M/M/1 Mathematical Model
-* FCFS Queue
-* CSV Test Vectors
-* Automated Verification
-* Git / GitHub
+🔄 Fixed-point conversion  
+🔄 Verilog implementation  
+🔄 FPGA testbench development  
+🔄 Hardware FIFO queue  
 
 ---
 
-## Current Project Status
+# FPGA Implementation Plan
 
-| Component                  | Status    |
-| -------------------------- | --------- |
-| M/M/1 mathematical model   | Completed |
-| Python implementation      | Completed |
-| FCFS queue                 | Completed |
-| Request model              | Completed |
-| 100 test vectors           | Completed |
-| Automated verification     | Completed |
-| GitHub repository          | Completed |
-| Fixed-point implementation | Planned   |
-| Verilog implementation     | Planned   |
-| FPGA simulation            | Planned   |
-| Zynq integration           | Planned   |
-| Real application requests  | Planned   |
-| M/M/N extension            | Planned   |
+Target hardware:
+
+```text
+PYNQ-Z2 FPGA Board
+```
+
+The planned hardware architecture:
+
+```text
+Incoming Requests
+
+        |
+        ↓
+
+    Hardware FIFO
+
+        |
+        ↓
+
+ M/M/1 Accelerator
+
+        |
+        ↓
+
+ Processed Output
+```
+
+Hardware modules:
+
+- Fixed-point M/M/1 accelerator
+- FIFO request queue
+- Verification testbench
+
+Python results will be used as the reference for FPGA output comparison.
 
 ---
 
-## Future Development
+# Future Development Roadmap
 
-The project will be developed in stages.
-
-### Stage 1 — Current
+The planned development stages are:
 
 ```text
-M/M/1 Mathematical Model
-        ↓
-Python Implementation
-        ↓
-FCFS Queue
-        ↓
-Testing & Verification
+Python M/M/1 Model
+          |
+          ↓
+Fixed-Point Conversion
+          |
+          ↓
+Verilog M/M/1 Accelerator
+          |
+          ↓
+Hardware FIFO Queue
+          |
+          ↓
+PYNQ-Z2 FPGA Implementation
+          |
+          ↓
+Real Digital Marketing Data
+          |
+          ↓
+M/M/N Multi-Server Model
 ```
 
-### Stage 2 — Fixed-Point Model
+---
 
-The floating-point Python model will be converted into a fixed-point representation suitable for digital hardware.
+# Real Data Integration
 
-The proposed representation is:
+Currently:
 
 ```text
-Q16.16
-32-bit fixed-point
+Random λ and μ values
 ```
 
-The fixed-point model will first be compared against the existing floating-point reference implementation.
+are used for testing.
 
-### Stage 3 — FPGA Implementation
-
-After numerical verification, the model will be implemented using hardware description logic and tested through simulation.
-
-The target platform is a **Zynq FPGA**.
-
-The planned hardware interface will include:
+In the future:
 
 ```text
-Inputs:
-    λ
-    μ
-    n
-    start
-    clock
-    reset
-
-Outputs:
-    done
-    stable
-    ρ
-    P0
-    Pn
-    L
-    Lq
-    W
-    Wq
-```
-
-### Stage 4 — Real Application Integration
-
-The eventual system will accept real application events:
-
-```text
-Website / Application
-        ↓
-Incoming Marketing Events
-        ↓
-Request Collector
-        ↓
-FCFS Queue
-        ↓
+Digital Marketing Events
+          |
+          ↓
+Request Arrival Data
+          |
+          ↓
+Calculate Arrival Rate λ
+          |
+          ↓
 Queueing Model
-        ↓
-Processing Servers
-        ↓
-Completed Requests
 ```
 
-### Stage 5 — M/M/N Extension
+Real application requests will replace simulated inputs.
 
-The current M/M/1 system uses one server.
+---
 
-The long-term goal is to extend the model to **M/M/N**, allowing multiple processing servers:
+# M/M/N Extension
+
+The current system uses:
 
 ```text
-                 ┌── Server 1
-                 │
-Requests → Queue ├── Server 2
-                 │
-                 ├── Server 3
-                 │
-                 └── Server N
+M/M/1
 ```
 
-The overall system architecture will remain similar; the single-server queueing model will be extended to support multiple servers.
+with one server.
+
+Future development will extend it to:
+
+```text
+M/M/N
+```
+
+where multiple servers process requests.
+
+Example:
+
+```text
+              Server 1
+             /
+Requests → Queue → Server 2
+             \
+              Server N
+```
+
+The existing FCFS and request architecture will be preserved while replacing the single-server model with a multi-server system.
 
 ---
 
-## Project Goal
+# Conclusion
 
-The final goal is to develop a queueing-based request-processing system that can:
+This project establishes a queueing-based request processing system for digital marketing applications.
 
-1. Receive incoming digital marketing requests.
-2. Maintain request order using FCFS.
-3. Analyze queue behavior using queueing theory.
-4. Process requests using multiple processing resources.
-5. Implement the computational model on Zynq FPGA hardware.
-6. Eventually support an M/M/N queueing model for multiple servers.
+The current stage provides:
 
----
+- A verified Python M/M/1 model
+- FCFS request scheduling
+- Automated testing
+- Reference results for hardware comparison
 
-## Repository
-
-GitHub repository:
-
-**os-queueing-project**
-
-The repository contains the current Python implementation, test generation, verification framework, and project documentation.
+The next stage focuses on converting the model into fixed-point hardware and implementing it on the PYNQ-Z2 FPGA platform.
